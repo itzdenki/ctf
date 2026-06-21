@@ -1,9 +1,42 @@
-import { Challenge, CTFInfo, Prize, Sponsor, Team } from '../../types';
+import { Challenge, ChallengeAttachment, CTFInfo, Prize, Sponsor, Team } from '../../types';
 import { calculateDynamicScores } from '../../utils/scoring';
 
 type Row = Record<string, any>;
 
+function formatAttachmentSize(size: unknown) {
+  if (typeof size === 'number') {
+    if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    return `${Math.ceil(size / 1024)} KB`;
+  }
+  return String(size || '');
+}
+
+function mapAttachments(row: Row): ChallengeAttachment[] {
+  const attachmentRows = Array.isArray(row.challenge_attachments) ? row.challenge_attachments : [];
+  const attachments: ChallengeAttachment[] = attachmentRows
+    .map((attachment: Row) => ({
+      id: attachment.id,
+      fileName: attachment.file_name,
+      fileSize: formatAttachmentSize(attachment.file_size),
+      storagePath: attachment.storage_path,
+      createdAt: attachment.created_at,
+    }))
+    .sort((a: ChallengeAttachment, b: ChallengeAttachment) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+
+  if (attachments.length === 0 && row.attachment_path) {
+    attachments.push({
+      id: 'legacy',
+      fileName: row.attachment_name || 'attachment',
+      fileSize: row.attachment_size || '',
+      storagePath: row.attachment_path,
+    });
+  }
+
+  return attachments;
+}
+
 export function mapChallenge(row: Row, includeFlag = false): Challenge {
+  const attachments = mapAttachments(row);
   return {
     id: row.id,
     name: row.name,
@@ -11,9 +44,10 @@ export function mapChallenge(row: Row, includeFlag = false): Challenge {
     category: row.category,
     points: row.points,
     connectionLink: row.connection_link || undefined,
-    fileName: row.attachment_name || undefined,
-    fileSize: row.attachment_size || undefined,
-    attachmentPath: row.attachment_path || undefined,
+    fileName: attachments[0]?.fileName,
+    fileSize: attachments[0]?.fileSize,
+    attachments,
+    attachmentPath: attachments[0]?.storagePath,
     flag: includeFlag ? '' : undefined,
     solvedCount: row.solved_count || 0,
     hints: row.hints || [],

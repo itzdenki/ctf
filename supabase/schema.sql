@@ -71,6 +71,30 @@ create table if not exists challenges (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists challenge_attachments (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id text not null references challenges(id) on delete cascade,
+  storage_path text not null unique,
+  file_name text not null,
+  file_size bigint not null default 0,
+  content_type text,
+  created_at timestamptz not null default now()
+);
+
+insert into challenge_attachments (challenge_id, storage_path, file_name, file_size)
+select
+  id,
+  attachment_path,
+  coalesce(attachment_name, 'attachment'),
+  case
+    when attachment_size ~ '^[0-9]+ KB$' then split_part(attachment_size, ' ', 1)::bigint * 1024
+    when attachment_size ~ '^[0-9]+ MB$' then split_part(attachment_size, ' ', 1)::bigint * 1024 * 1024
+    else 0
+  end
+from challenges
+where attachment_path is not null
+on conflict (storage_path) do nothing;
+
 alter table teams add column if not exists is_admin boolean not null default false;
 alter table challenges add column if not exists flag_hash text;
 

@@ -37,7 +37,7 @@ export async function loadPublicBootstrap(request: NextRequest): Promise<Bootstr
   }
 
   const [challengesResult, teamsResult, solvesResult] = await Promise.all([
-    supabase.from('challenges').select('*').eq('is_published', true).order('category', { ascending: true }).order('id', { ascending: true }),
+    supabase.from('challenges').select('*, challenge_attachments(*)').eq('is_published', true).order('category', { ascending: true }).order('id', { ascending: true }),
     supabase.from('teams').select('*').eq('status', 'active').order('created_at', { ascending: true }),
     supabase.from('solves').select('*').order('solved_at', { ascending: true }),
   ]);
@@ -84,7 +84,7 @@ export async function loadAdminState() {
     supabase.from('event_config').select('*').eq('id', 'default').maybeSingle(),
     supabase.from('sponsors').select('*').order('sort_order', { ascending: true }),
     supabase.from('prizes').select('*').order('sort_order', { ascending: true }),
-    supabase.from('challenges').select('*').order('category', { ascending: true }).order('id', { ascending: true }),
+    supabase.from('challenges').select('*, challenge_attachments(*)').order('category', { ascending: true }).order('id', { ascending: true }),
     supabase.from('teams').select('*').order('created_at', { ascending: true }),
     supabase.from('solves').select('*').order('solved_at', { ascending: true }),
   ]);

@@ -76,8 +76,8 @@ export default function ChallengeView({
     }
   };
 
-  const handleDownloadFile = async (fileName: string, challengeId: string) => {
-    const response = await fetch(`/api/challenges/${encodeURIComponent(challengeId)}/attachment`, {
+  const handleDownloadFile = async (fileName: string, challengeId: string, attachmentId: string) => {
+    const response = await fetch(`/api/challenges/${encodeURIComponent(challengeId)}/attachment?attachmentId=${encodeURIComponent(attachmentId)}`, {
       credentials: 'include',
     });
     const payload = await response.json();
@@ -262,21 +262,25 @@ export default function ChallengeView({
                   </section>
                 )}
 
-                {activeChallenge.fileName && (
+                {activeChallenge.attachments && activeChallenge.attachments.length > 0 && (
                   <section className="space-y-2">
-                    <label className="text-xs font-mono font-bold text-gray-400 block uppercase tracking-wider">Attachment</label>
-                    <div className="flex items-center justify-between p-3 rounded-sm border border-cyan-500/10 bg-[#0a0c10]">
-                      <div className="min-w-0 font-mono">
-                        <span className="text-xs font-semibold text-gray-200 block truncate">{activeChallenge.fileName}</span>
-                        <span className="text-[10px] text-gray-500 block">{activeChallenge.fileSize}</span>
-                      </div>
-                      <button
-                        onClick={() => handleDownloadFile(activeChallenge.fileName!, activeChallenge.id)}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-sm bg-cyan-500/10 hover:bg-cyan-500 hover:text-black text-cyan-400 font-mono text-xs font-bold transition-all border border-cyan-500/30 cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Download</span>
-                      </button>
+                    <label className="text-xs font-mono font-bold text-gray-400 block uppercase tracking-wider">Attachments</label>
+                    <div className="space-y-2">
+                      {activeChallenge.attachments.map((attachment) => (
+                        <div key={attachment.id} className="flex items-center justify-between gap-3 p-3 rounded-sm border border-cyan-500/10 bg-[#0a0c10]">
+                          <div className="min-w-0 font-mono">
+                            <span className="text-xs font-semibold text-gray-200 block truncate">{attachment.fileName}</span>
+                            <span className="text-[10px] text-gray-500 block">{attachment.fileSize}</span>
+                          </div>
+                          <button
+                            onClick={() => handleDownloadFile(attachment.fileName, activeChallenge.id, attachment.id)}
+                            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-sm bg-cyan-500/10 hover:bg-cyan-500 hover:text-black text-cyan-400 font-mono text-xs font-bold transition-all border border-cyan-500/30 cursor-pointer"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Download</span>
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </section>
                 )}

@@ -43,13 +43,15 @@ const emptyChallenge: Challenge = {
   id: '',
   name: '',
   description: '',
-  category: 'Misc',
+  category: 'Web',
   points: 100,
   flag: '',
   solvedCount: 0,
   hints: [],
   isPublished: false,
 };
+
+const challengeCategories = ['Web', 'Crypto', 'Reverse', 'Forensics', 'Pwn', 'Osint', 'Mics'];
 
 async function readJson(response: Response) {
   const payload = await response.json().catch(() => ({}));
@@ -87,9 +89,14 @@ export default function AdminPanel() {
     const payload = await readJson(await fetch('/api/admin/bootstrap', { cache: 'no-store', credentials: 'include' }));
     setState(payload);
     setEventDraft(payload.info);
-    if (!selectedChallenge.id && payload.challenges?.[0]) {
-      setSelectedChallenge(payload.challenges[0]);
-    }
+    setSelectedChallenge((current) => {
+      if (current.id) {
+        const refreshed = payload.challenges?.find((challenge: Challenge) => challenge.id === current.id);
+        return refreshed ? { ...refreshed, flag: current.flag || '' } : current;
+      }
+
+      return payload.challenges?.[0] || current;
+    });
   };
 
   const loadSettings = async () => {
@@ -192,15 +199,22 @@ export default function AdminPanel() {
     setSelectedChallenge(emptyChallenge);
   }, 'Challenge deleted.');
 
-  const uploadAttachment = (challengeId: string, file: File) => runAction(async () => {
+  const uploadAttachment = (challengeId: string, files: File[]) => runAction(async () => {
     const formData = new FormData();
-    formData.set('file', file);
+    files.forEach((file) => formData.append('files', file));
     await readJson(await fetch(`/api/admin/challenges/${encodeURIComponent(challengeId)}/attachment`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
     }));
-  }, 'Attachment uploaded.');
+  }, files.length === 1 ? 'Attachment uploaded.' : `${files.length} attachments uploaded.`);
+
+  const deleteAttachment = (challengeId: string, attachmentId: string) => runAction(async () => {
+    await readJson(await fetch(`/api/admin/challenges/${encodeURIComponent(challengeId)}/attachment?attachmentId=${encodeURIComponent(attachmentId)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }));
+  }, 'Attachment deleted.');
 
   const updateTeam = (team: Team) => runAction(async () => {
     await readJson(await fetch(`/api/admin/teams/${encodeURIComponent(team.id)}`, {
@@ -394,7 +408,8 @@ export default function AdminPanel() {
               onChange={setSelectedChallenge}
               onSave={saveChallenge}
               onDelete={() => selectedChallenge.id && deleteChallenge(selectedChallenge.id)}
-              onUpload={(file) => selectedChallenge.id && uploadAttachment(selectedChallenge.id, file)}
+              onUpload={(files) => selectedChallenge.id && uploadAttachment(selectedChallenge.id, files)}
+              onDeleteAttachment={(attachmentId) => selectedChallenge.id && deleteAttachment(selectedChallenge.id, attachmentId)}
             />
           </Panel>
         </div>
@@ -754,6 +769,33 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   );
 }
 
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      <span className="mb-1 block font-mono text-xs uppercase text-slate-500">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-sm border border-cyan-500/20 bg-[#050608] px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function ChallengeEditor({
   challenge,
   isExisting,
@@ -761,20 +803,27 @@ function ChallengeEditor({
   onSave,
   onDelete,
   onUpload,
+  onDeleteAttachment,
 }: {
   challenge: Challenge;
   isExisting: boolean;
   onChange: (challenge: Challenge) => void;
   onSave: () => void;
   onDelete: () => void;
-  onUpload: (file: File) => void;
+  onUpload: (files: File[]) => void;
+  onDeleteAttachment: (attachmentId: string) => void;
 }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field label="ID" value={challenge.id} onChange={(id) => onChange({ ...challenge, id })} />
         <Field label="Name" value={challenge.name} onChange={(name) => onChange({ ...challenge, name })} />
-        <Field label="Category" value={challenge.category} onChange={(category) => onChange({ ...challenge, category })} />
+        <SelectField
+          label="Category"
+          value={challenge.category}
+          options={challengeCategories}
+          onChange={(category) => onChange({ ...challenge, category })}
+        />
         <Field label="Points" value={String(challenge.points)} onChange={(points) => onChange({ ...challenge, points: Number(points) || 0 })} />
         <Field label={isExisting ? 'New Flag (leave blank to keep hash)' : 'Flag'} value={challenge.flag || ''} onChange={(flag) => onChange({ ...challenge, flag })} />
         <Field label="Connection Link" value={challenge.connectionLink || ''} onChange={(connectionLink) => onChange({ ...challenge, connectionLink })} />
@@ -800,6 +849,39 @@ function ChallengeEditor({
           className="w-full rounded-sm border border-cyan-500/20 bg-[#050608] px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
         />
       </label>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-xs uppercase text-slate-500">Files</span>
+          <span className="font-mono text-[10px] text-slate-600">{challenge.attachments?.length || 0} uploaded</span>
+        </div>
+        {challenge.attachments && challenge.attachments.length > 0 ? (
+          <div className="space-y-2">
+            {challenge.attachments.map((attachment) => (
+              <div key={attachment.id} className="flex items-center justify-between gap-3 rounded-sm border border-cyan-500/10 bg-[#050608] px-3 py-2 font-mono text-xs">
+                <div className="min-w-0">
+                  <span className="block truncate font-bold text-white">{attachment.fileName}</span>
+                  <span className="text-slate-500">{attachment.fileSize}</span>
+                </div>
+                {attachment.id !== 'legacy' && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteAttachment(attachment.id)}
+                    className="shrink-0 rounded-sm border border-rose-500/30 px-2 py-1 font-bold text-rose-300 hover:bg-rose-500/10"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-sm border border-dashed border-cyan-500/15 bg-[#050608] px-3 py-4 font-mono text-xs text-slate-500">
+            No files uploaded yet.
+          </div>
+        )}
+      </div>
+
       <label className="inline-flex items-center gap-2 font-mono text-xs text-slate-300">
         <input
           type="checkbox"
@@ -813,18 +895,31 @@ function ChallengeEditor({
           <Save className="h-4 w-4" />
           SAVE
         </button>
-        {challenge.id && (
+        {isExisting ? (
           <>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-sm border border-cyan-500/30 px-4 py-2 font-mono text-xs font-bold text-cyan-300">
               <FileUp className="h-4 w-4" />
-              UPLOAD FILE
-              <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+              UPLOAD FILES
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) onUpload(files);
+                  e.currentTarget.value = '';
+                }}
+              />
             </label>
             <button onClick={onDelete} className="inline-flex items-center gap-2 rounded-sm border border-rose-500/30 px-4 py-2 font-mono text-xs font-bold text-rose-300">
               <Trash2 className="h-4 w-4" />
               DELETE
             </button>
           </>
+        ) : (
+          <span className="font-mono text-xs text-slate-500">
+            Save this challenge before uploading files.
+          </span>
         )}
       </div>
     </div>

@@ -12,6 +12,14 @@ export interface Sponsor {
   tier: 'Diamond' | 'Gold' | 'Silver';
 }
 
+export interface ChallengeAttachment {
+  id: string;
+  fileName: string;
+  fileSize: string;
+  storagePath?: string;
+  createdAt?: string;
+}
+
 export interface Challenge {
   id: string;
   name: string;
@@ -21,6 +29,7 @@ export interface Challenge {
   connectionLink?: string; // e.g., "nc ctf.antigravity.corp 1337"
   fileName?: string; // e.g., "exploit.c", "hash_breaker.py"
   fileSize?: string;
+  attachments?: ChallengeAttachment[];
   flag?: string; // Write-only in admin APIs; stored server-side as a hash.
   solvedCount: number;
   hints?: string[];

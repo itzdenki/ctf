@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '../../../../../lib/server/supabase';
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const attachmentId = _request.nextUrl.searchParams.get('attachmentId');
     const supabase = getSupabaseAdmin();
     const { data: eventConfig, error: eventError } = await supabase
       .from('event_config')
@@ -23,12 +24,29 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       .eq('is_published', true)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!challenge?.attachment_path) return jsonError('Attachment not found.', 404);
+
+    let storagePath = challenge?.attachment_path;
+    let fileName = challenge?.attachment_name || true;
+
+    if (attachmentId && attachmentId !== 'legacy') {
+      const { data: attachment, error: attachmentError } = await supabase
+        .from('challenge_attachments')
+        .select('storage_path, file_name')
+        .eq('id', attachmentId)
+        .eq('challenge_id', id)
+        .maybeSingle();
+      if (attachmentError) throw new Error(attachmentError.message);
+      if (!attachment) return jsonError('Attachment not found.', 404);
+      storagePath = attachment.storage_path;
+      fileName = attachment.file_name || true;
+    }
+
+    if (!storagePath) return jsonError('Attachment not found.', 404);
 
     const { data, error: signedError } = await supabase.storage
       .from('challenge-files')
-      .createSignedUrl(challenge.attachment_path, 60 * 5, {
-        download: challenge.attachment_name || true,
+      .createSignedUrl(storagePath, 60 * 5, {
+        download: fileName,
       });
     if (signedError) throw new Error(signedError.message);
 
