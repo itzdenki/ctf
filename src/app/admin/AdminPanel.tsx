@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, Database, FileUp, HardDrive, KeyRound, Link2, LogOut, Save, Shield, Trash2, XCircle } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Database, FileUp, HardDrive, KeyRound, Link2, LogOut, Save, Shield, Trash2, Users, XCircle } from 'lucide-react';
 import { BootstrapPayload, Challenge, CTFInfo, Prize, Sponsor, Team } from '../../types';
+import SolveListModal, { getChallengeSolveRows } from '../../components/SolveListModal';
 
 type AdminIdentity = { id: string; username: string; role: string };
 type AdminTab = 'overview' | 'challenges' | 'teams' | 'event' | 'sponsors' | 'settings';
@@ -70,6 +71,7 @@ export default function AdminPanel() {
   const [state, setState] = useState<BootstrapPayload | null>(null);
   const [settings, setSettings] = useState<AdminSettingsPayload | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge>(emptyChallenge);
+  const [solveModalChallenge, setSolveModalChallenge] = useState<Challenge | null>(null);
   const [eventDraft, setEventDraft] = useState<CTFInfo | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -357,18 +359,31 @@ export default function AdminPanel() {
               NEW CHALLENGE
             </button>
             <div className="space-y-2">
-              {state?.challenges.map((challenge) => (
-                <button
-                  key={challenge.id}
-                  onClick={() => setSelectedChallenge(challenge)}
-                  className={`w-full rounded-sm border p-3 text-left font-mono text-xs ${
-                    selectedChallenge.id === challenge.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-cyan-500/10 hover:bg-white/5'
-                  }`}
-                >
-                  <span className="block font-bold text-white">{challenge.name}</span>
-                  <span className="text-slate-500">{challenge.category} / {challenge.points} pts</span>
-                </button>
-              ))}
+              {state?.challenges.map((challenge) => {
+                const solveCount = getChallengeSolveRows(challenge.id, state.teams).length;
+                return (
+                  <div key={challenge.id} className="grid grid-cols-[1fr_auto] gap-2">
+                    <button
+                      onClick={() => setSelectedChallenge(challenge)}
+                      className={`min-w-0 rounded-sm border p-3 text-left font-mono text-xs ${
+                        selectedChallenge.id === challenge.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-cyan-500/10 hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="block truncate font-bold text-white">{challenge.name}</span>
+                      <span className="text-slate-500">{challenge.category} / {challenge.points} pts</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSolveModalChallenge(challenge)}
+                      className="flex w-16 flex-col items-center justify-center rounded-sm border border-cyan-500/10 bg-[#050608] px-2 py-2 font-mono text-[10px] text-cyan-300 transition-colors hover:border-cyan-500/40 hover:bg-cyan-500/10"
+                      title="View solves"
+                    >
+                      <Users className="mb-1 h-3.5 w-3.5" />
+                      <span className="font-bold">{solveCount}</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </Panel>
 
@@ -463,6 +478,14 @@ export default function AdminPanel() {
           admin={admin}
           settings={settings}
           onRefresh={() => runAction(loadSettings, 'Settings refreshed.')}
+        />
+      )}
+
+      {solveModalChallenge && (
+        <SolveListModal
+          challenge={solveModalChallenge}
+          teams={state?.teams || []}
+          onClose={() => setSolveModalChallenge(null)}
         />
       )}
     </AdminShell>

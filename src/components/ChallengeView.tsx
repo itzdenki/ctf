@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle, Compass, Download, ExternalLink, KeyRound, Shield, Terminal } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Challenge, Team } from '../types';
+import SolveListModal, { getChallengeSolveRows } from './SolveListModal';
 
 interface ChallengeViewProps {
   challenges: Challenge[];
@@ -38,6 +39,7 @@ export default function ChallengeView({
   const [flagInputs, setFlagInputs] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<Record<string, { success: boolean; message: string } | null>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [solveModalChallenge, setSolveModalChallenge] = useState<Challenge | null>(null);
 
   const categories = useMemo(() => {
     return ['All', ...Array.from(new Set(challenges.map((challenge) => challenge.category)))];
@@ -54,6 +56,7 @@ export default function ChallengeView({
   const getChallengePts = (challengeId: string, fallbackPts: number) => challengePoints?.[challengeId] ?? fallbackPts;
   const isChallengeSolved = (challengeId: string) => currentUser?.solvedChallengeIds.includes(challengeId) || false;
   const getTeamName = (teamId?: string) => teams?.find((team) => team.id === teamId)?.name || null;
+  const getSolveCount = (challenge: Challenge) => teams ? getChallengeSolveRows(challenge.id, teams).length : challenge.solvedCount;
 
   const handleSubmitFlag = async (event: React.FormEvent, challengeId: string) => {
     event.preventDefault();
@@ -215,10 +218,14 @@ export default function ChallengeView({
                     <span className="text-xs text-gray-500 block">POINTS</span>
                     <span className="text-xl font-bold text-cyan-400">{getChallengePts(activeChallenge.id, activeChallenge.points)}</span>
                   </div>
-                  <div className="bg-[#050608] border border-cyan-500/10 px-3 py-1.5 rounded-sm text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSolveModalChallenge(activeChallenge)}
+                    className="bg-[#050608] border border-cyan-500/10 px-3 py-1.5 rounded-sm text-xs text-left transition-colors hover:border-cyan-500/40 hover:bg-cyan-500/10"
+                  >
                     <span className="text-gray-500 block text-[9px] uppercase">Solves</span>
-                    <span className="text-white font-bold">{teams ? teams.filter((team) => team.solvedChallengeIds.includes(activeChallenge.id)).length : activeChallenge.solvedCount}</span>
-                  </div>
+                    <span className="text-white font-bold">{getSolveCount(activeChallenge)}</span>
+                  </button>
                 </div>
               </div>
 
@@ -328,6 +335,14 @@ export default function ChallengeView({
           )}
         </AnimatePresence>
       </div>
+
+      {solveModalChallenge && (
+        <SolveListModal
+          challenge={solveModalChallenge}
+          teams={teams || []}
+          onClose={() => setSolveModalChallenge(null)}
+        />
+      )}
     </div>
   );
 }
