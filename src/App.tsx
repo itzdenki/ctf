@@ -18,6 +18,7 @@ import RegisterView from './components/RegisterView';
 import LoginView from './components/LoginView';
 import ProfileView from './components/ProfileView';
 import EventNotStartedView from './components/EventNotStartedView';
+import AuthRequiredView from './components/AuthRequiredView';
 
 export default function App() {
   const [tab, setTab] = useState<string>('home');
@@ -89,6 +90,7 @@ export default function App() {
 
   const eventStartMs = new Date(info.startTime).getTime();
   const eventNotStarted = nowMs !== null && Number.isFinite(eventStartMs) && nowMs < eventStartMs;
+  const isAuthenticated = Boolean(currentUser && !currentUser.id.startsWith('guest-') && currentUser.status !== 'banned');
 
   useEffect(() => {
     if (nowMs === null || !Number.isFinite(eventStartMs) || nowMs < eventStartMs || refreshedEventStart === info.startTime) {
@@ -237,8 +239,18 @@ export default function App() {
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.25 }}
             >
-              {eventNotStarted ? (
+              {isBootstrapping ? (
+                <div className="rounded-sm border border-cyan-500/20 bg-[#080a0e] px-4 py-3 text-sm text-cyan-300 font-mono">
+                  Loading CTF data...
+                </div>
+              ) : eventNotStarted ? (
                 <EventNotStartedView startTime={info.startTime} />
+              ) : !isAuthenticated ? (
+                <AuthRequiredView
+                  title="Challenges locked"
+                  message="Login or register a team account to view challenges and submit flags."
+                  setTab={setTab}
+                />
               ) : (
                 <ChallengeView
                   challenges={challenges}
@@ -261,8 +273,18 @@ export default function App() {
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.25 }}
             >
-              {eventNotStarted ? (
+              {isBootstrapping ? (
+                <div className="rounded-sm border border-cyan-500/20 bg-[#080a0e] px-4 py-3 text-sm text-cyan-300 font-mono">
+                  Loading CTF data...
+                </div>
+              ) : eventNotStarted ? (
                 <EventNotStartedView startTime={info.startTime} />
+              ) : !isAuthenticated ? (
+                <AuthRequiredView
+                  title="Scoreboard locked"
+                  message="Login or register a team account to view standings."
+                  setTab={setTab}
+                />
               ) : (
                 <ScoreboardView teams={teams} currentUser={currentUser} challenges={challenges} />
               )}

@@ -1,11 +1,16 @@
 import { NextRequest } from 'next/server';
+import { getCurrentTeamRow } from '../../../../../lib/server/auth';
 import { getMessageFromError, getStatusFromError, jsonError, jsonOk } from '../../../../../lib/server/http';
 import { getSupabaseAdmin } from '../../../../../lib/server/supabase';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const attachmentId = _request.nextUrl.searchParams.get('attachmentId');
+    const team = await getCurrentTeamRow(request);
+    if (!team) return jsonError('Please login before downloading challenge files.', 401);
+    if (team.status !== 'active') return jsonError('This team account cannot download challenge files.', 403);
+
+    const attachmentId = request.nextUrl.searchParams.get('attachmentId');
     const supabase = getSupabaseAdmin();
     const { data: eventConfig, error: eventError } = await supabase
       .from('event_config')

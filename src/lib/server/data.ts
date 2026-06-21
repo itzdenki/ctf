@@ -4,6 +4,19 @@ import { getCurrentTeamRow, publicTeamShape } from './auth';
 import { mapChallenge, mapInfo, computeScoreState, buildTeamsFromRows } from './mappers';
 import { getSupabaseAdmin } from './supabase';
 
+function buildLockedBootstrap(info: BootstrapPayload['info'], currentTeamRow: any): BootstrapPayload {
+  const currentUser = currentTeamRow ? buildTeamsFromRows([currentTeamRow], [])[0] || null : null;
+
+  return {
+    info,
+    challenges: [],
+    teams: [],
+    currentUser: publicTeamShape(currentUser) as Team | null,
+    challengePoints: {},
+    bloodWinners: {},
+  };
+}
+
 export async function loadPublicBootstrap(request: NextRequest): Promise<BootstrapPayload> {
   const supabase = getSupabaseAdmin();
 
@@ -23,17 +36,10 @@ export async function loadPublicBootstrap(request: NextRequest): Promise<Bootstr
   const info = mapInfo(eventResult.data, sponsorsResult.data || [], prizesResult.data || []);
   const eventStartMs = new Date(eventResult.data.start_time).getTime();
   const eventHasStarted = Number.isFinite(eventStartMs) && Date.now() >= eventStartMs;
+  const canViewCompetitionData = currentTeamRow?.status === 'active';
 
-  if (!eventHasStarted) {
-    const currentUser = currentTeamRow ? buildTeamsFromRows([currentTeamRow], [])[0] || null : null;
-    return {
-      info,
-      challenges: [],
-      teams: [],
-      currentUser: publicTeamShape(currentUser) as Team | null,
-      challengePoints: {},
-      bloodWinners: {},
-    };
+  if (!canViewCompetitionData || !eventHasStarted) {
+    return buildLockedBootstrap(info, currentTeamRow);
   }
 
   const [challengesResult, teamsResult, solvesResult] = await Promise.all([

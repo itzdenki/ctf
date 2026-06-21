@@ -36,21 +36,8 @@ function buildTaskLabels(challenges: Challenge[]) {
   }, {});
 }
 
-function getAwardedPoints(team: Team, challenge: Challenge, payload: BootstrapPayload) {
-  const basePoints = payload.challengePoints[challenge.id] ?? challenge.points;
-  const blood = payload.bloodWinners[challenge.id] || {};
-
-  if (blood.first === team.id) {
-    return basePoints + Math.round(basePoints * 0.3);
-  }
-  if (blood.second === team.id) {
-    return basePoints + Math.round(basePoints * 0.2);
-  }
-  if (blood.third === team.id) {
-    return basePoints + Math.round(basePoints * 0.1);
-  }
-
-  return basePoints;
+function getAwardedPoints(_team: Team, challenge: Challenge, payload: BootstrapPayload) {
+  return payload.challengePoints[challenge.id] ?? challenge.points;
 }
 
 export function buildScoreboardFeed(payload: BootstrapPayload): ScoreboardFeed {
