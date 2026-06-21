@@ -1,0 +1,6 @@
+{
+  "name": "CTF Platform",
+  "description": "A capture the flag platform featuring home page, challenge board, scoreboard, and authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
