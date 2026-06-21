@@ -50,7 +50,7 @@ export default function Navbar({ currentTab, setTab, currentUser, onLogout }: Na
             <span className="text-[#050608] font-black text-xl font-mono">Σ</span>
           </div>
           <span className="hidden xl:inline text-xl font-bold tracking-tighter text-white font-mono">
-            ANTIGRAVITY<span className="text-cyan-400">_CTF</span>
+            LYKN<span className="text-cyan-400">_CTF</span>
           </span>
         </div>
 

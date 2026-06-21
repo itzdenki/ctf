@@ -315,7 +315,7 @@ export default function App() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs text-slate-500">
           <div className="flex items-center space-x-2">
             <Terminal className="h-4 w-4 text-emerald-500" />
-            <span>&copy; 2026 Antigravity Cyber Arena. All Rights Reserved.</span>
+            <span>&copy; 2026 LYKNCTF. All Rights Reserved.</span>
           </div>
           <div className="flex items-center space-x-4">
             <span>Server Time Indicator: <span className="text-slate-400 font-mono">UTC</span></span>
