@@ -33,7 +33,7 @@ export default function EventNotStartedView({ startTime }: EventNotStartedViewPr
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-cyan-400">Arena locked</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-cyan-400">LYKNCTF is locked</p>
             <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-white">
               Event not started yet
             </h1>

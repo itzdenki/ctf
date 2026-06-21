@@ -139,7 +139,7 @@ export default function App() {
     }
 
     await loadBootstrap();
-    triggerNotification(`Team ${result.teamName || teamName} joined the arena.`, 'success');
+    triggerNotification(`Team ${result.teamName || teamName} joined LYKNCTF.`, 'success');
     return { success: true, message: result.message || 'Registered successfully.' };
   };
 

@@ -66,7 +66,7 @@ export default function HomeView({ info, currentUser, setTab }: HomeViewProps) {
           className="relative z-10 space-y-6 max-w-4xl mx-auto"
         >
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs font-mono font-bold tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-            <Sparkles className="h-3 w-3" /> ARENA IS ONLINE WITH IMMERSIVE_UI
+            <Sparkles className="h-3 w-3" /> LYKNCTF IS ONLINE
           </span>
 
           <h1 className="font-mono text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white select-none">
